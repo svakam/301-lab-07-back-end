@@ -81,8 +81,8 @@ let dailyWeather = () => {
 
   let summary;
   let time;
-  let dailyArray = [];
-  dailyData.forEach(day => {
+  // let dailyArray = [];
+  dailyData.map(day => {
     const pairData = Object.entries(day);
     pairData.forEach((pair) => {
       pair.forEach((element) => {
@@ -95,12 +95,10 @@ let dailyWeather = () => {
       });
     });
 
-    // push to array
     let eachDay = new Forecast(summary, time);
-    dailyArray.push(eachDay);
+    return eachDay;
   });
-
-  return dailyArray;
+  return dailyData;
 };
 
 function Forecast(summary, time) {
