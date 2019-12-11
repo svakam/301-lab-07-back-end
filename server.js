@@ -19,7 +19,10 @@ const errorMessage = {
 
 app.get('/location', (request, response) => {
   try {
-    let city = request.query.data;
+    // testing only - remove after deployment
+    let city = 'Lynnwood';
+
+    // let city = request.query.data;
 
     if (city.toLowerCase() !== addressComponents.long_name.toLowerCase() || city !== addressComponents.short_name.toLowerCase()) {
       response.status(500).send(errorMessage);
@@ -57,7 +60,10 @@ function Location(city, resultsNav) {
 
 app.get('/weather', (request, response) => {
   try {
-    let city = request.query.data;
+    // testing only - remove after deployment
+    let city = 'Lynnwood';
+
+    // let city = request.query.data;
 
     if (city.toLowerCase() !== addressComponents.long_name.toLowerCase() || city !== addressComponents.short_name.toLowerCase()) {
       response.status(500).send(errorMessage);
@@ -81,8 +87,8 @@ let dailyWeather = () => {
 
   let summary;
   let time;
-  let dailyArray = [];
-  dailyData.forEach(day => {
+  // let dailyArray = [];
+  dailyData.map(day => {
     const pairData = Object.entries(day);
     pairData.forEach((pair) => {
       pair.forEach((element) => {
@@ -95,12 +101,10 @@ let dailyWeather = () => {
       });
     });
 
-    // push to array
     let eachDay = new Forecast(summary, time);
-    dailyArray.push(eachDay);
+    return eachDay;
   });
-
-  return dailyArray;
+  return dailyData;
 };
 
 function Forecast(summary, time) {
