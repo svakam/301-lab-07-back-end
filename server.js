@@ -5,24 +5,29 @@ const express = require('express');
 require('dotenv').config();
 const cors = require('cors');
 
+// allows us to interact with APIs
+const superagent = require('superagent');
+
 const app = express();
+const geoData = require('./data/geo.json');
+const addressComponents = geoData.results[0].address_components[0];
 app.use(cors());
 const PORT = process.env.PORT || 3001;
 
 // globals
-const geoData = require('./data/geo.json');
-const addressComponents = geoData.results[0].address_components[0];
 const errorMessage = {
   status: 500,
   responseText: 'Sorry, something went wrong',
 };
 
 app.get('/location', (request, response) => {
+  console.log('i am in location');
   try {
-    // testing only - remove after deployment
-    let city = 'Lynnwood';
+    console.log('i am in location try');
+    // // testing only - remove after deployment
+    // let city = 'Lynnwood';
 
-    // let city = request.query.data;
+    const city = request.query.data;
 
     if (city.toLowerCase() !== addressComponents.long_name.toLowerCase() || city !== addressComponents.short_name.toLowerCase()) {
       response.status(500).send(errorMessage);
@@ -45,7 +50,7 @@ let searchLatLong = city => {
   let resultsNav = geoData.results[0];
 
   const latLongObj = new Location(city, resultsNav);
-
+  console.log('hi');
   return latLongObj;
 };
 
@@ -59,58 +64,30 @@ function Location(city, resultsNav) {
 }
 
 app.get('/weather', (request, response) => {
-  try {
-    // testing only - remove after deployment
-    let city = 'Lynnwood';
-
-    // let city = request.query.data;
-
-    if (city.toLowerCase() !== addressComponents.long_name.toLowerCase() || city !== addressComponents.short_name.toLowerCase()) {
-      response.status(500).send(errorMessage);
-    }
-    else {
-      let dailyForecastForCity = dailyWeather();
-      response.send(dailyForecastForCity);
-    }
-  }
-  catch (error) {
-    console.error(error);
-
+  const city = request.query.data;
+  if (city.toLowerCase() !== addressComponents.long_name.toLowerCase() || city !== addressComponents.short_name.toLowerCase()) {
     response.status(500).send(errorMessage);
+  }
+  else {
+    let timeSummaryData = dailyWeather();
+    response.send(timeSummaryData);
   }
 });
 
+function Forecast(day) {
+  this.forecast = day.summary;
+  this.time = day.time;
+}
+
 let dailyWeather = () => {
   const weatherData = require('./data/darksky.json');
-
   const dailyData = weatherData.daily.data;
 
-  let summary;
-  let time;
-  // let dailyArray = [];
-  dailyData.map(day => {
-    const pairData = Object.entries(day);
-    pairData.forEach((pair) => {
-      pair.forEach((element) => {
-        if (element === 'time') {
-          time = pair[1];
-        }
-        if (element === 'summary') {
-          summary = pair[1];
-        }
-      });
-    });
-
-    let eachDay = new Forecast(summary, time);
-    return eachDay;
+  let timeSummary = dailyData.map(day => {
+    return new Forecast(day);
   });
-  return dailyData;
+  return timeSummary;
 };
-
-function Forecast(summary, time) {
-  this.forecast = summary;
-  this.time = time;
-}
 
 app.get('*', (request, response) => {
   response.status(404).send('Page not found');
@@ -119,4 +96,3 @@ app.get('*', (request, response) => {
 app.listen(PORT, () => {
   console.log(`listening on port ${PORT}`);
 });
-
