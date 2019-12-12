@@ -21,36 +21,25 @@ const errorMessage = {
 };
 
 app.get('/location', (request, response) => {
-  console.log('i am in location');
   try {
-    console.log('i am in location try');
-    // // testing only - remove after deployment
-    // let city = 'Lynnwood';
-
     const city = request.query.data;
-
     if (city.toLowerCase() !== addressComponents.long_name.toLowerCase() || city !== addressComponents.short_name.toLowerCase()) {
       response.status(500).send(errorMessage);
     }
-
     else {
       let locationObject = searchLatLong(city);
-
       response.send(locationObject);
     }
   }
   catch (error) {
     console.error(error);
-
     response.status(500).send(errorMessage);
   }
 });
 
 let searchLatLong = city => {
   let resultsNav = geoData.results[0];
-
   const latLongObj = new Location(city, resultsNav);
-  console.log('hi');
   return latLongObj;
 };
 
@@ -64,13 +53,18 @@ function Location(city, resultsNav) {
 }
 
 app.get('/weather', (request, response) => {
-  const city = request.query.data;
-  if (city.toLowerCase() !== addressComponents.long_name.toLowerCase() || city !== addressComponents.short_name.toLowerCase()) {
-    response.status(500).send(errorMessage);
+  try {
+    const city = request.query.data;
+    if (city.toLowerCase() !== addressComponents.long_name.toLowerCase() || city !== addressComponents.short_name.toLowerCase()) {
+      response.status(500).send(errorMessage);
+    }
+    else {
+      let timeSummaryData = dailyWeather();
+      response.send(timeSummaryData);
+    }
   }
-  else {
-    let timeSummaryData = dailyWeather();
-    response.send(timeSummaryData);
+  catch {
+
   }
 });
 
