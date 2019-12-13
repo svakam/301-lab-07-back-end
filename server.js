@@ -20,9 +20,19 @@ const errorMessage = {
 
 app.get('/location', (request, response) => {
   try {
-    const city = request.query.data;
-
+    let city = request.query.data;
     searchLatLong(city, response);
+  }
+  catch (error) {
+    console.error(error);
+    response.status(500).send(errorMessage);
+  }
+});
+
+app.get('/weather', (request, response) => {
+  try {
+    let city = request.query.data;
+    dailyWeather(city, response);
   }
   catch (error) {
     console.error(error);
@@ -32,13 +42,13 @@ app.get('/location', (request, response) => {
 
 let searchLatLong = (city, response) => {
   let url = `https://maps.googleapis.com/maps/api/geocode/json?address=${city}&key=${process.env.GEOCODE_API_KEY}`;
-  return superagent.get(url)
+  superagent.get(url)
     .then(request => {
-      const locationOb = new Location(city, request.body.results[0]);
+      let locationOb = new Location(city, request.body.results[0]);
       response.send(locationOb);
     })
     .catch(error => {
-      console.log(error);
+      console.error(error);
       response.status(500).send(errorMessage);
     });
 
@@ -52,29 +62,21 @@ let searchLatLong = (city, response) => {
   }
 };
 
-app.get('/weather', (request, response) => {
-  try {
-    let city = request.query.data;
-    dailyWeather(city, response);
-  }
-  catch (error) {
-    console.log(errorMessage);
-    response.status(500).send(errorMessage);
-  }
-});
-
 let dailyWeather = (city, response) => {
   let latitude = city.latitude;
   let longitude = city.longitude;
   let url = `https://api.darksky.net/forecast/${process.env.DARKSKY_API_KEY}/${latitude},${longitude}`;
 
-  return superagent.get(url)
+  superagent.get(url)
     .then(request => {
-      const dailyData = request.body.daily.data;
+      let dailyData = request.body.daily.data;
       let timeSummary = dailyData.map(day => new Forecast(day));
       response.send(timeSummary);
     })
-    .catch(error => console.error(error));
+    .catch(error => {
+      console.error(error);
+      response.status(500).send(errorMessage);
+    });
 
   function Forecast(day) {
     this.forecast = day.summary;
