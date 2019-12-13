@@ -40,6 +40,37 @@ app.get('/weather', (request, response) => {
   }
 });
 
+app.get('/events', (request, response) => {
+  try {
+    let locationObject = request.query.data;
+    eventFinder(locationObject, response);
+  }
+  catch (error) {
+    console.error(error);
+    response.status(500).send(errorMessage);
+  }
+});
+
+let eventFinder = (locationObject, response) => {
+  let url = `http://api.eventful.com/json/events/search?location=${locationObject.search_query}&app_key=${process.env.EVENTFUL_API_KEY}`;
+
+  superagent.get(url)
+    .then(results => {
+      let eventsArr = JSON.parse(results.text).events.event;
+      const finalEventsArr = eventsArr.map(event => new Event(event));
+
+      response.send(finalEventsArr);
+    });
+
+  function Event(eventData) {
+    this.link = eventData.url;
+    this.name = eventData.title;
+    // eslint-disable-next-line camelcase
+    this.event_date = eventData.start_time;
+    this.summary = eventData.description;
+  }
+};
+
 let searchLatLong = (city, response) => {
   let url = `https://maps.googleapis.com/maps/api/geocode/json?address=${city}&key=${process.env.GEOCODE_API_KEY}`;
   superagent.get(url)
@@ -80,7 +111,8 @@ let dailyWeather = (city, response) => {
 
   function Forecast(day) {
     this.forecast = day.summary;
-    this.time = day.time;
+    let date = new Date(day.time * 1000);
+    this.time = date.toDateString(); // converts numbers to day
   }
 };
 
