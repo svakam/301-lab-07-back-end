@@ -39,6 +39,7 @@ let searchLatLong = (city, response) => {
     })
     .catch(error => {
       console.log(error);
+      response.status(500).send(errorMessage);
     });
 
   function Location(city, address) {
@@ -53,7 +54,8 @@ let searchLatLong = (city, response) => {
 
 app.get('/weather', (request, response) => {
   try {
-    dailyWeather(request, response);
+    let city = request.query.data;
+    dailyWeather(city, response);
   }
   catch (error) {
     console.log(errorMessage);
@@ -61,9 +63,9 @@ app.get('/weather', (request, response) => {
   }
 });
 
-let dailyWeather = (request, response) => {
-  let latitude = request.query.data.latitude;
-  let longitude = request.query.data.longitude;
+let dailyWeather = (city, response) => {
+  let latitude = city.latitude;
+  let longitude = city.longitude;
   let url = `https://api.darksky.net/forecast/${process.env.DARKSKY_API_KEY}/${latitude},${longitude}`;
 
   return superagent.get(url)
