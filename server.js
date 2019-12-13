@@ -9,8 +9,6 @@ const cors = require('cors');
 const superagent = require('superagent');
 
 const app = express();
-const geoData = require('./data/geo.json');
-const addressComponents = geoData.results[0].address_components[0];
 app.use(cors());
 const PORT = process.env.PORT || 3001;
 
@@ -23,13 +21,8 @@ const errorMessage = {
 app.get('/location', (request, response) => {
   try {
     const city = request.query.data;
-    if (city.toLowerCase() !== addressComponents.long_name.toLowerCase() || city !== addressComponents.short_name.toLowerCase()) {
-      response.status(500).send(errorMessage);
-    }
-    else {
-      let locationObject = searchLatLong(city);
-      response.send(locationObject);
-    }
+
+    searchLatLong(city, response);
   }
   catch (error) {
     console.error(error);
@@ -37,50 +30,54 @@ app.get('/location', (request, response) => {
   }
 });
 
-let searchLatLong = city => {
-  let resultsNav = geoData.results[0];
-  const latLongObj = new Location(city, resultsNav);
-  return latLongObj;
-};
+let searchLatLong = (city, response) => {
+  let url = `https://maps.googleapis.com/maps/api/geocode/json?address=${city}&key=${process.env.GEOCODE_API_KEY}`;
+  return superagent.get(url)
+    .then(request => {
+      const locationOb = new Location(city, request.body.results[0]);
+      response.send(locationOb);
+    })
+    .catch(error => {
+      console.log(error);
+    });
 
-function Location(city, resultsNav) {
-  // eslint-disable-next-line camelcase
-  this.search_query = city;
-  // eslint-disable-next-line camelcase
-  this.formatted_query = resultsNav.formatted_address;
-  this.latitude = resultsNav.geometry.location.lat;
-  this.longitude = resultsNav.geometry.location.lng;
-}
+  function Location(city, address) {
+    // eslint-disable-next-line camelcase
+    this.search_query = city;
+    // eslint-disable-next-line camelcase
+    this.formatted_query = address.formatted_address;
+    this.latitude = address.geometry.location.lat;
+    this.longitude = address.geometry.location.lng;
+  }
+};
 
 app.get('/weather', (request, response) => {
   try {
-    const city = request.query.data;
-    if (city.toLowerCase() !== addressComponents.long_name.toLowerCase() || city !== addressComponents.short_name.toLowerCase()) {
-      response.status(500).send(errorMessage);
-    }
-    else {
-      let timeSummaryData = dailyWeather();
-      response.send(timeSummaryData);
-    }
+    dailyWeather(request, response);
   }
-  catch {
-
+  catch (error) {
+    console.log(errorMessage);
+    response.status(500).send(errorMessage);
   }
 });
 
-function Forecast(day) {
-  this.forecast = day.summary;
-  this.time = day.time;
-}
+let dailyWeather = (request, response) => {
+  let latitude = request.query.data.latitude;
+  let longitude = request.query.data.longitude;
+  let url = `https://api.darksky.net/forecast/${process.env.DARKSKY_API_KEY}/${latitude},${longitude}`;
 
-let dailyWeather = () => {
-  const weatherData = require('./data/darksky.json');
-  const dailyData = weatherData.daily.data;
+  return superagent.get(url)
+    .then(request => {
+      const dailyData = request.body.daily.data;
+      let timeSummary = dailyData.map(day => new Forecast(day));
+      response.send(timeSummary);
+    })
+    .catch(error => console.error(error));
 
-  let timeSummary = dailyData.map(day => {
-    return new Forecast(day);
-  });
-  return timeSummary;
+  function Forecast(day) {
+    this.forecast = day.summary;
+    this.time = day.time;
+  }
 };
 
 app.get('*', (request, response) => {
