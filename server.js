@@ -12,12 +12,13 @@ const app = express();
 app.use(cors());
 const PORT = process.env.PORT || 3001;
 
-// globals
+// error
 const errorMessage = {
   status: 500,
   responseText: 'Sorry, something went wrong',
 };
 
+// routes
 app.get('/location', (request, response) => {
   try {
     let city = request.query.data;
@@ -51,26 +52,7 @@ app.get('/events', (request, response) => {
   }
 });
 
-let eventFinder = (locationObject, response) => {
-  let url = `http://api.eventful.com/json/events/search?location=${locationObject.search_query}&app_key=${process.env.EVENTFUL_API_KEY}`;
-
-  superagent.get(url)
-    .then(results => {
-      let eventsArr = JSON.parse(results.text).events.event;
-      const finalEventsArr = eventsArr.map(event => new Event(event));
-
-      response.send(finalEventsArr);
-    });
-
-  function Event(eventData) {
-    this.link = eventData.url;
-    this.name = eventData.title;
-    // eslint-disable-next-line camelcase
-    this.event_date = eventData.start_time;
-    this.summary = eventData.description;
-  }
-};
-
+// retrieve from APIs
 let searchLatLong = (city, response) => {
   let url = `https://maps.googleapis.com/maps/api/geocode/json?address=${city}&key=${process.env.GEOCODE_API_KEY}`;
   superagent.get(url)
@@ -116,10 +98,32 @@ let dailyWeather = (city, response) => {
   }
 };
 
+let eventFinder = (locationObject, response) => {
+  let url = `http://api.eventful.com/json/events/search?location=${locationObject.search_query}&app_key=${process.env.EVENTFUL_API_KEY}`;
+
+  superagent.get(url)
+    .then(results => {
+      let eventsArr = JSON.parse(results.text).events.event;
+      const finalEventsArr = eventsArr.map(event => new Event(event));
+
+      response.send(finalEventsArr);
+    });
+
+  function Event(eventData) {
+    this.link = eventData.url;
+    this.name = eventData.title;
+    // eslint-disable-next-line camelcase
+    this.event_date = eventData.start_time;
+    this.summary = eventData.description;
+  }
+};
+
+// 404
 app.get('*', (request, response) => {
   response.status(404).send('Page not found');
 });
 
+// console test port up
 app.listen(PORT, () => {
   console.log(`listening on port ${PORT}`);
 });
